@@ -1,1 +1,32 @@
+body {
+    margin: 0;
+    padding: 40px 20px;
+    background: #f5f7fa;
+    color: #1f2937;
+    font-family: system-ui, sans-serif;
+}
 
+main {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+h1 {
+    margin-bottom: 8px;
+}
+
+p {
+    color: #64748b;
+}
+
+#graph-container {
+    margin-top: 30px;
+}
+
+#graph-container canvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+}
