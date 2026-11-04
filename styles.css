@@ -23,6 +23,11 @@ p {
     margin-top: 30px;
 }
 
+.status-message {
+    min-height: 1.5em;
+    color: #b91c1c;
+}
+
 #graph-container canvas {
     display: block;
     max-width: 100%;

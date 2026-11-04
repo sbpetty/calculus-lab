@@ -3,47 +3,49 @@ let iterations = 0;
 let xDisplay;
 let counter;
 let input;
+let message;
+
+const X_SCALE = 40;
+const Y_SCALE = 15;
+const TOLERANCE = 0.000001;
 
 function setup() {
 	const canvas = createCanvas(600, 400);
 	canvas.parent("graph-container");
 
-	let newton_button = createButton("Calculate");
-	newton_button.mousePressed(newtonStep);
+	const newtonButton = createButton("Calculate next iteration");
+	newtonButton.mousePressed(newtonStep);
 
-	let set_x_button = createButton("Set starting X");
-	set_x_button.mousePressed(setStartingX);
+	const setXButton = createButton("Set starting X");
+	setXButton.mousePressed(setStartingX);
 
 	xDisplay = createP("X = " + currentX);
 	counter = createP("Iterations: " + iterations);
 
-	input = createInput("3", "number")
+	input = createInput("3", "number");
+	input.attribute("step", "any");
+
+	message = createP("");
+	message.class("status-message");
 }
 
 function draw() {
 	background(250);
-
-	// Move the coordinate origin to the center.
 	translate(width / 2, height / 2);
 
-	// Draw the coordinate axes.
 	stroke(150);
 	strokeWeight(1);
-
 	line(-width / 2, 0, width / 2, 0);
 	line(0, -height / 2, 0, height / 2);
 
-	// Draw f(x) = x^2.
+	// Draw f(x) = x^2 - 5.
 	stroke(40, 110, 220);
 	strokeWeight(3);
 	noFill();
-
 	beginShape();
 
 	for (let x = -5; x <= 5; x += 0.05) {
-		const y = quadratic(x)
-
-		vertex(screenX(x), screenY(y));
+		vertex(graphX(x), graphY(quadratic(x)));
 	}
 
 	endShape();
@@ -53,22 +55,21 @@ function draw() {
 	stroke(0, 0, 0);
 	fill("Black");
 
-	circle(screenX(getTangentLine(currentX).x), screenY(getTangentLine(currentX).y), 4);
+	const tangent = getTangentLine(currentX);
+	circle(graphX(tangent.x), graphY(tangent.y), 4);
 
-	if (getNextX() != null) {
-		const intercept = getNextX();
-		const screen_intercept = intercept * 40;
-		
-		circle(screen_intercept, 0, 4);
+	const intercept = getNextX();
+	if (intercept !== null) {
+		circle(graphX(intercept), 0, 4);
 	}
 }
 
-function screenX(x) {
-	return x * 40;
+function graphX(x) {
+	return x * X_SCALE;
 }
 
-function screenY(y) {
-	return -y * 15;
+function graphY(y) {
+	return -y * Y_SCALE;
 }
 
 function quadratic(x) {
@@ -87,43 +88,63 @@ function getTangentLine(x) {
 		x,
 		y,
 		slope
-	}
+	};
 }
 
-function drawTangentLine(tangent_line) {
-	const x1 = tangent_line.x - 5;
-	const x2 = tangent_line.x + 5;
-	const y1 = tangent_line.slope * (x1 - tangent_line.x) + tangent_line.y;
-	const y2 = tangent_line.slope * (x2 - tangent_line.x) + tangent_line.y;
+function drawTangentLine(tangentLine) {
+	const x1 = tangentLine.x - 5;
+	const x2 = tangentLine.x + 5;
+	const y1 = tangentLine.slope * (x1 - tangentLine.x) + tangentLine.y;
+	const y2 = tangentLine.slope * (x2 - tangentLine.x) + tangentLine.y;
 
 	stroke(255, 0, 0);
-	line(screenX(x1), screenY(y1), screenX(x2), screenY(y2));
+	line(graphX(x1), graphY(y1), graphX(x2), graphY(y2));
 }
 
 function setStartingX() {
-	let number_input = Number(input.value());
-	currentX = number_input;
+	const numberInput = Number(input.value());
+
+	if (!Number.isFinite(numberInput) || numberInput === 0) {
+		showMessage("Please enter a nonzero finite starting value.");
+		return;
+	}
+
+	currentX = numberInput;
 	xDisplay.html("X = " + currentX);
 	iterations = 0;
 	counter.html("Iterations: " + iterations);
+	showMessage("");
 }
 
 function newtonStep() {
-	if (getNextX() != null) {
-		currentX = getNextX();
-		xDisplay.html("X = " + currentX);
-		iterations += 1;
-		counter.html("Iterations: " + iterations);
-		return 0;
+	const nextX = getNextX();
+
+	if (nextX === null) {
+		showMessage("Newton's method cannot continue because the derivative is zero.");
+		return;
+	}
+
+	currentX = nextX;
+	xDisplay.html("X = " + currentX);
+	iterations += 1;
+	counter.html("Iterations: " + iterations);
+
+	if (Math.abs(quadratic(currentX)) < TOLERANCE) {
+		const rootSign = currentX < 0 ? "negative" : "positive";
+		showMessage(`Converged to the ${rootSign} square root of 5.`);
 	} else {
-		return 1;
+		showMessage("");
 	}
 }
 
+function showMessage(text) {
+	message.html(text);
+}
+
 function getNextX() {
-	if (derivative(currentX) != 0) {
+	if (derivative(currentX) !== 0) {
 		return currentX - (quadratic(currentX) / derivative(currentX));
-	} else {
-		return null;
 	}
+
+	return null;
 }
