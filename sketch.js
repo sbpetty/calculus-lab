@@ -1,12 +1,12 @@
+let target = 5;
 let currentX = 3;
 let iterations = 0;
 let xDisplay;
 let counter;
-let input;
+let targetInput;
+let startingXInput;
 let message;
 
-const X_SCALE = 40;
-const Y_SCALE = 15;
 const TOLERANCE = 0.000001;
 
 function setup() {
@@ -16,14 +16,22 @@ function setup() {
 	const newtonButton = createButton("Calculate next iteration");
 	newtonButton.mousePressed(newtonStep);
 
+	createSpan(" Target number: ");
+	targetInput = createInput(String(target), "number");
+	targetInput.attribute("step", "any");
+
+	const setTargetButton = createButton("Set target");
+	setTargetButton.mousePressed(setTarget);
+
+	createSpan(" Starting X: ");
+	startingXInput = createInput(String(currentX), "number");
+	startingXInput.attribute("step", "any");
+
 	const setXButton = createButton("Set starting X");
 	setXButton.mousePressed(setStartingX);
 
 	xDisplay = createP("X = " + currentX);
 	counter = createP("Iterations: " + iterations);
-
-	input = createInput("3", "number");
-	input.attribute("step", "any");
 
 	message = createP("");
 	message.class("status-message");
@@ -38,13 +46,16 @@ function draw() {
 	line(-width / 2, 0, width / 2, 0);
 	line(0, -height / 2, 0, height / 2);
 
-	// Draw f(x) = x^2 - 5.
+	// Draw f(x) = x^2 - target.
 	stroke(40, 110, 220);
 	strokeWeight(3);
 	noFill();
 	beginShape();
 
-	for (let x = -5; x <= 5; x += 0.05) {
+	const xRange = getXRange();
+	const sampleCount = 200;
+	for (let i = 0; i <= sampleCount; i += 1) {
+		const x = -xRange + (2 * xRange * i) / sampleCount;
 		vertex(graphX(x), graphY(quadratic(x)));
 	}
 
@@ -65,15 +76,15 @@ function draw() {
 }
 
 function graphX(x) {
-	return x * X_SCALE;
+	return x * getXScale();
 }
 
 function graphY(y) {
-	return -y * Y_SCALE;
+	return -y * getYScale();
 }
 
 function quadratic(x) {
-	return x ** 2 - 5;
+	return x ** 2 - target;
 }
 
 function derivative(x) {
@@ -92,8 +103,9 @@ function getTangentLine(x) {
 }
 
 function drawTangentLine(tangentLine) {
-	const x1 = tangentLine.x - 5;
-	const x2 = tangentLine.x + 5;
+	// Extend the tangent across the entire visible graph.
+	const x1 = -getXRange();
+	const x2 = getXRange();
 	const y1 = tangentLine.slope * (x1 - tangentLine.x) + tangentLine.y;
 	const y2 = tangentLine.slope * (x2 - tangentLine.x) + tangentLine.y;
 
@@ -102,7 +114,7 @@ function drawTangentLine(tangentLine) {
 }
 
 function setStartingX() {
-	const numberInput = Number(input.value());
+	const numberInput = Number(startingXInput.value());
 
 	if (!Number.isFinite(numberInput) || numberInput === 0) {
 		showMessage("Please enter a nonzero finite starting value.");
@@ -111,6 +123,20 @@ function setStartingX() {
 
 	currentX = numberInput;
 	xDisplay.html("X = " + currentX);
+	iterations = 0;
+	counter.html("Iterations: " + iterations);
+	showMessage("");
+}
+
+function setTarget() {
+	const numberInput = Number(targetInput.value());
+
+	if (!Number.isFinite(numberInput) || numberInput <= 0) {
+		showMessage("Please enter a positive finite target number.");
+		return;
+	}
+
+	target = numberInput;
 	iterations = 0;
 	counter.html("Iterations: " + iterations);
 	showMessage("");
@@ -131,7 +157,7 @@ function newtonStep() {
 
 	if (Math.abs(quadratic(currentX)) < TOLERANCE) {
 		const rootSign = currentX < 0 ? "negative" : "positive";
-		showMessage(`Converged to the ${rootSign} square root of 5.`);
+		showMessage(`Converged to the ${rootSign} square root of ${target}.`);
 	} else {
 		showMessage("");
 	}
@@ -143,8 +169,25 @@ function showMessage(text) {
 
 function getNextX() {
 	if (derivative(currentX) !== 0) {
-		return currentX - (quadratic(currentX) / derivative(currentX));
+		const nextX = currentX - (quadratic(currentX) / derivative(currentX));
+		return Number.isFinite(nextX) ? nextX : null;
 	}
 
 	return null;
+}
+
+function getXRange() {
+	return Math.max(5, Math.sqrt(target) * 2.5);
+}
+
+function getYRange() {
+	return Math.max(5, target * 1.5);
+}
+
+function getXScale() {
+	return width / (2 * getXRange());
+}
+
+function getYScale() {
+	return height / (2 * getYRange());
 }
