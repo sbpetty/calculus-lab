@@ -1,3 +1,4 @@
+// User-controlled values and the current state of the iteration.
 let target = 5;
 let currentX = 3;
 let iterations = 0;
@@ -7,8 +8,10 @@ let targetInput;
 let startingXInput;
 let message;
 
+// The iteration is considered converged when f(x) is this close to zero.
 const TOLERANCE = 0.000001;
 
+// Create the canvas and the controls used to interact with the visualizer.
 function setup() {
 	const canvas = createCanvas(600, 400);
 	canvas.parent("graph-container");
@@ -37,16 +40,18 @@ function setup() {
 	message.class("status-message");
 }
 
+// Redraw the graph and the current Newton step every frame.
 function draw() {
 	background(250);
 	translate(width / 2, height / 2);
 
+	// Draw the horizontal and vertical axes through the center of the canvas.
 	stroke(150);
 	strokeWeight(1);
 	line(-width / 2, 0, width / 2, 0);
 	line(0, -height / 2, 0, height / 2);
 
-	// Draw f(x) = x^2 - target.
+	// Draw f(x) = x^2 - target by sampling points across the visible x-range.
 	stroke(40, 110, 220);
 	strokeWeight(3);
 	noFill();
@@ -61,11 +66,13 @@ function draw() {
 
 	endShape();
 
+	// Draw the tangent at the current approximation.
 	drawTangentLine(getTangentLine(currentX));
 
 	stroke(0, 0, 0);
 	fill("Black");
 
+	// Mark the current point on the curve and the next x-intercept.
 	const tangent = getTangentLine(currentX);
 	circle(graphX(tangent.x), graphY(tangent.y), 4);
 
@@ -75,22 +82,28 @@ function draw() {
 	}
 }
 
+// Convert a mathematical x-coordinate into a canvas coordinate.
 function graphX(x) {
 	return x * getXScale();
 }
 
+// Convert a mathematical y-coordinate into a canvas coordinate. The negative
+// sign accounts for the fact that canvas y-values increase downward.
 function graphY(y) {
 	return -y * getYScale();
 }
 
+// The equation whose roots are being approximated.
 function quadratic(x) {
 	return x ** 2 - target;
 }
 
+// The derivative of x^2 - target.
 function derivative(x) {
 	return x * 2;
 }
 
+// Return the point and slope needed to draw the tangent at x.
 function getTangentLine(x) {
 	const y = quadratic(x);
 	const slope = derivative(x);
@@ -102,6 +115,7 @@ function getTangentLine(x) {
 	};
 }
 
+// Draw the tangent from one edge of the visible graph to the other.
 function drawTangentLine(tangentLine) {
 	// Extend the tangent across the entire visible graph.
 	const x1 = -getXRange();
@@ -113,6 +127,7 @@ function drawTangentLine(tangentLine) {
 	line(graphX(x1), graphY(y1), graphX(x2), graphY(y2));
 }
 
+// Apply a new starting approximation and reset the iteration counter.
 function setStartingX() {
 	const numberInput = Number(startingXInput.value());
 
@@ -128,6 +143,7 @@ function setStartingX() {
 	showMessage("");
 }
 
+// Apply a new positive target number and reset the iteration counter.
 function setTarget() {
 	const numberInput = Number(targetInput.value());
 
@@ -142,6 +158,7 @@ function setTarget() {
 	showMessage("");
 }
 
+// Perform one Newton iteration and update the displayed state.
 function newtonStep() {
 	const nextX = getNextX();
 
@@ -163,10 +180,12 @@ function newtonStep() {
 	}
 }
 
+// Display validation, convergence, or calculation feedback to the user.
 function showMessage(text) {
 	message.html(text);
 }
 
+// Newton's method: x_(n+1) = x_n - f(x_n) / f'(x_n).
 function getNextX() {
 	if (derivative(currentX) !== 0) {
 		const nextX = currentX - (quadratic(currentX) / derivative(currentX));
@@ -176,18 +195,22 @@ function getNextX() {
 	return null;
 }
 
+// Keep both roots visible while leaving enough horizontal space around them.
 function getXRange() {
 	return Math.max(5, Math.sqrt(target) * 2.5);
 }
 
+// Choose a vertical range that scales with the selected target.
 function getYRange() {
 	return Math.max(5, target * 1.5);
 }
 
+// Pixels per mathematical x-unit.
 function getXScale() {
 	return width / (2 * getXRange());
 }
 
+// Pixels per mathematical y-unit.
 function getYScale() {
 	return height / (2 * getYRange());
 }
